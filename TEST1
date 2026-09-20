@@ -1,8 +1,8 @@
--- ================== LOADSTRING TEST — TEST 1 ==================
--- Pre-test info + Test 1 only.
--- Ready to chain to Test 2 when you paste it next.
+-- ================== LOADSTRING TEST — TEST 1 (chained) ==================
+-- Runs Test 1. On success, fetches TEST2 from GitHub and executes it.
 
 local TOTAL_TESTS = 5
+local BASE_URL = "https://raw.githubusercontent.com/oblitsosupport/Loadstring-Ban-tests/refs/heads/main/"
 
 -- ============================================================
 -- PRE-TEST INFO STAGE
@@ -22,7 +22,6 @@ task.wait(0.5)
 -- ============================================================
 print("🟠 Test 1 - Upcoming")
 
--- The test body is itself a loadstring source
 local test1Source = [[
     local ok, result = pcall(function()
         if type(loadstring) ~= "function" then return nil end
@@ -33,7 +32,6 @@ local test1Source = [[
     return ok and result == 2
 ]]
 
--- Wrap it so it returns (ok, result)
 local wrapper = string.format([[
     local ok, result = pcall(function()
         %s
@@ -41,7 +39,6 @@ local wrapper = string.format([[
     return ok, result
 ]], test1Source)
 
--- Compile via loadstring
 local loadOk, chunkOrErr = pcall(function()
     if type(loadstring) ~= "function" then error("loadstring is nil") end
     local chunk = loadstring(wrapper)
@@ -60,8 +57,43 @@ end
 
 if passed then
     print("✅ Test 1 - Sucess")
-    print("🟠 Test 2 - Upcoming  (paste Test 2 to continue)")
 else
     print("❌ Test 1 - Failed")
     print("❌ No more tests left")
+    return
 end
+
+-- ============================================================
+-- FETCH + RUN TEST 2
+-- ============================================================
+print("🟠 Test 2 - Upcoming")
+
+local fetchOk, source = pcall(function()
+    return game:HttpGet(BASE_URL .. "TEST2")
+end)
+
+if not fetchOk or type(source) ~= "string" or source == "" then
+    print("❌ Test 2 - Failed  (could not fetch TEST2 from GitHub)")
+    print("❌ No more tests left")
+    return
+end
+
+local compileOk, test2Chunk = pcall(function()
+    return loadstring(source)
+end)
+
+if not compileOk or type(test2Chunk) ~= "function" then
+    print("❌ Test 2 - Failed  (TEST2 could not be compiled)")
+    print("❌ No more tests left")
+    return
+end
+
+local execOk, execErr = pcall(test2Chunk)
+
+if not execOk then
+    print("❌ Test 2 - Failed  (" .. tostring(execErr) .. ")")
+    print("❌ No more tests left")
+    return
+end
+
+-- TEST2 handles its own reporting + chaining to TEST3
