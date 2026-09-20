@@ -1,1 +1,81 @@
+-- ================== LOADSTRING TEST — TEST 2 ==================
+-- Checks: a compiled chunk can set a global (side effects work).
+-- On success, fetches and runs TEST3.
 
+local TOTAL_TESTS = 5
+local BASE_URL = "https://raw.githubusercontent.com/oblitsosupport/Loadstring-Ban-tests/refs/heads/main/"
+
+print("🟠 Test 2 - Upcoming")
+
+local test2Source = [[
+    local ok = pcall(function()
+        if type(loadstring) ~= "function" then error("no loadstring") end
+        _G.__LS_SIDE = nil
+        local chunk = loadstring("_G.__LS_SIDE = 'ok'")
+        if type(chunk) ~= "function" then error("no chunk") end
+        chunk()
+    end)
+    local passed = ok and _G.__LS_SIDE == "ok"
+    _G.__LS_SIDE = nil
+    return passed
+]]
+
+local wrapper = string.format([[
+    local ok, result = pcall(function()
+        %s
+    end)
+    return ok, result
+]], test2Source)
+
+local loadOk, chunkOrErr = pcall(function()
+    if type(loadstring) ~= "function" then error("loadstring is nil") end
+    local chunk = loadstring(wrapper)
+    if type(chunk) ~= "function" then error("chunk is nil") end
+    return chunk
+end)
+
+local passed = false
+
+if not loadOk or type(chunkOrErr) ~= "function" then
+    passed = false
+else
+    local runOk, execOk, result = pcall(chunkOrErr)
+    passed = runOk and execOk and result == true
+end
+
+if passed then
+    print("✅ Test 2 - Sucess")
+else
+    print("❌ Test 2 - Failed")
+    print("❌ No more tests left")
+    return
+end
+
+-- ============ FETCH + RUN TEST 3 ============
+local fetchOk, source = pcall(function()
+    return game:HttpGet(BASE_URL .. "TEST3")
+end)
+
+if not fetchOk or type(source) ~= "string" or source == "" then
+    print("❌ Test 3 - Failed  (could not fetch TEST3 from GitHub)")
+    print("❌ No more tests left")
+    return
+end
+
+local compileOk, nextChunk = pcall(function()
+    return loadstring(source)
+end)
+
+if not compileOk or type(nextChunk) ~= "function" then
+    print("❌ Test 3 - Failed  (TEST3 could not be compiled)")
+    print("❌ No more tests left")
+    return
+end
+
+local execOk, execErr = pcall(nextChunk)
+
+if not execOk then
+    print("❌ Test 3 - Failed  (" .. tostring(execErr) .. ")")
+    print("❌ No more tests left")
+    return
+end
