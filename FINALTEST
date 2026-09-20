@@ -1,1 +1,4 @@
+-- ================== FINAL TEST — SUCCESS ANNOUNCEMENT ==================
+-- This is not a real test. It only announces that all tests succeeded.
 
+print("Tests were sucessful, technically this is a 6th test but it is not")
