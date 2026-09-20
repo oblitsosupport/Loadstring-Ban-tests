@@ -1,0 +1,67 @@
+-- ================== LOADSTRING TEST — TEST 1 ==================
+-- Pre-test info + Test 1 only.
+-- Ready to chain to Test 2 when you paste it next.
+
+local TOTAL_TESTS = 5
+
+-- ============================================================
+-- PRE-TEST INFO STAGE
+-- ============================================================
+print("This is a Loadstring ban test, it will test in the game if a loadstring is blocked by an anti cheat feature or by settings of the game")
+print(string.format("Total Tests: %d", TOTAL_TESTS))
+print("Upcoming Test: 1")
+print("Information about the emojis it means")
+print("✅ - Test suceeded")
+print("🟠 - Test upcoming")
+print("❌ - Test failed or there are no more tests left")
+
+task.wait(0.5)
+
+-- ============================================================
+-- TEST 1
+-- ============================================================
+print("🟠 Test 1 - Upcoming")
+
+-- The test body is itself a loadstring source
+local test1Source = [[
+    local ok, result = pcall(function()
+        if type(loadstring) ~= "function" then return nil end
+        local chunk = loadstring("return 1 + 1")
+        if type(chunk) ~= "function" then return nil end
+        return chunk()
+    end)
+    return ok and result == 2
+]]
+
+-- Wrap it so it returns (ok, result)
+local wrapper = string.format([[
+    local ok, result = pcall(function()
+        %s
+    end)
+    return ok, result
+]], test1Source)
+
+-- Compile via loadstring
+local loadOk, chunkOrErr = pcall(function()
+    if type(loadstring) ~= "function" then error("loadstring is nil") end
+    local chunk = loadstring(wrapper)
+    if type(chunk) ~= "function" then error("chunk is nil") end
+    return chunk
+end)
+
+local passed = false
+
+if not loadOk or type(chunkOrErr) ~= "function" then
+    passed = false
+else
+    local runOk, execOk, result = pcall(chunkOrErr)
+    passed = runOk and execOk and result == true
+end
+
+if passed then
+    print("✅ Test 1 - Sucess")
+    print("🟠 Test 2 - Upcoming  (paste Test 2 to continue)")
+else
+    print("❌ Test 1 - Failed")
+    print("❌ No more tests left")
+end
