@@ -1,1 +1,75 @@
+-- ================== LOADSTRING TEST — TEST 5 (final real test) ==================
+-- Checks: nested loadstring — a chunk that itself calls loadstring.
+-- On success, fetches and runs FINALTEST (final success announcement).
 
+local TOTAL_TESTS = 5
+local BASE_URL = "https://raw.githubusercontent.com/oblitsosupport/Loadstring-Ban-tests/refs/heads/main/"
+
+print("🟠 Test 5 - Upcoming")
+
+local test5Source = [[
+    local ok, result = pcall(function()
+        if type(loadstring) ~= "function" then return nil end
+        local outer = loadstring("local inner = loadstring('return 3 * 3'); return inner()")
+        if type(outer) ~= "function" then return nil end
+        return outer()
+    end)
+    return ok and result == 9
+]]
+
+local wrapper = string.format([[
+    local ok, result = pcall(function()
+        %s
+    end)
+    return ok, result
+]], test5Source)
+
+local loadOk, chunkOrErr = pcall(function()
+    if type(loadstring) ~= "function" then error("loadstring is nil") end
+    local chunk = loadstring(wrapper)
+    if type(chunk) ~= "function" then error("chunk is nil") end
+    return chunk
+end)
+
+local passed = false
+
+if not loadOk or type(chunkOrErr) ~= "function" then
+    passed = false
+else
+    local runOk, execOk, result = pcall(chunkOrErr)
+    passed = runOk and execOk and result == true
+end
+
+if passed then
+    print("✅ Test 5 - Sucess")
+else
+    print("❌ Test 5 - Failed")
+    print("❌ No more tests left")
+    return
+end
+
+-- ============ FETCH + RUN FINALTEST ============
+local fetchOk, source = pcall(function()
+    return game:HttpGet(BASE_URL .. "FINALTEST")
+end)
+
+if not fetchOk or type(source) ~= "string" or source == "" then
+    -- Even if FINALTEST fails to fetch, all 5 real tests still passed
+    print("🏁 All 5 tests passed — loadstring is fully working.")
+    return
+end
+
+local compileOk, finalChunk = pcall(function()
+    return loadstring(source)
+end)
+
+if not compileOk or type(finalChunk) ~= "function" then
+    print("🏁 All 5 tests passed — loadstring is fully working.")
+    return
+end
+
+local execOk, execErr = pcall(finalChunk)
+
+if not execOk then
+    print("🏁 All 5 tests passed — loadstring is fully working.")
+end
