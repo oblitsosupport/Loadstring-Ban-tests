@@ -1,1 +1,85 @@
+-- ================== LOADSTRING TEST — TEST 4 ==================
+-- Checks: a multi-line chunk with a local function compiles and runs.
+-- On success, fetches and runs TEST5.
 
+local TOTAL_TESTS = 5
+local BASE_URL = "https://raw.githubusercontent.com/oblitsosupport/Loadstring-Ban-tests/refs/heads/main/"
+
+print("🟠 Test 4 - Upcoming")
+
+local test4Source = [[
+    local ok, result = pcall(function()
+        if type(loadstring) ~= "function" then return nil end
+        local src = [[
+            local function fib(n)
+                if n < 2 then return n end
+                return fib(n-1) + fib(n-2)
+            end
+            return fib(10)
+        ]]
+        local chunk = loadstring(src)
+        if type(chunk) ~= "function" then return nil end
+        return chunk()
+    end)
+    return ok and result == 55
+]]
+
+local wrapper = string.format([[
+    local ok, result = pcall(function()
+        %s
+    end)
+    return ok, result
+]], test4Source)
+
+local loadOk, chunkOrErr = pcall(function()
+    if type(loadstring) ~= "function" then error("loadstring is nil") end
+    local chunk = loadstring(wrapper)
+    if type(chunk) ~= "function" then error("chunk is nil") end
+    return chunk
+end)
+
+local passed = false
+
+if not loadOk or type(chunkOrErr) ~= "function" then
+    passed = false
+else
+    local runOk, execOk, result = pcall(chunkOrErr)
+    passed = runOk and execOk and result == true
+end
+
+if passed then
+    print("✅ Test 4 - Sucess")
+else
+    print("❌ Test 4 - Failed")
+    print("❌ No more tests left")
+    return
+end
+
+-- ============ FETCH + RUN TEST 5 ============
+local fetchOk, source = pcall(function()
+    return game:HttpGet(BASE_URL .. "TEST5")
+end)
+
+if not fetchOk or type(source) ~= "string" or source == "" then
+    print("❌ Test 5 - Failed  (could not fetch TEST5 from GitHub)")
+    print("❌ No more tests left")
+    return
+end
+
+local compileOk, nextChunk = pcall(function()
+    return loadstring(source)
+end)
+
+if not compileOk or type(nextChunk) ~= "function" then
+    print("❌ Test 5 - Failed  (TEST5 could not be compiled)")
+    print("❌ No more tests left")
+    return
+end
+
+local execOk, execErr = pcall(nextChunk)
+
+if not execOk then
+    print("❌ Test 5 - Failed  (" .. tostring(execErr) .. ")")
+    print("❌ No more tests left")
+    return
+end
